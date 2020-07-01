@@ -11,6 +11,7 @@ import org.apache.cordova.PluginResult;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -77,6 +78,24 @@ public class IntercomBridge extends CordovaPlugin {
             //Get app credentials from config.xml or the app bundle if they can't be found
             String apiKey = preferences.getString("intercom-android-api-key", "");
             String appId = preferences.getString("intercom-app-id", "");
+            if(apiKey.equals("")) {
+              Class<?> buildConfig = Class.forName(context.getPackageName() + ".BuildConfig");
+              try {
+                Field androidKey = buildConfig.getDeclaredField("INTERCOM_ANDROID_KEY");
+                apiKey = (String) androidKey.get(null);
+              } catch (NoSuchFieldException e) {
+                Log.e("Intercom-Cordova", "ERROR: Could not load ANDROID_API_KEY from gradle.properties!", e);
+              }
+            }
+            if(appId.equals("")) {
+              Class<?> buildConfig = Class.forName(context.getPackageName() + ".BuildConfig");
+              try {
+                Field appKey = buildConfig.getDeclaredField("INTERCOM_APP");
+                appId = (String) appKey.get(null);
+              } catch (NoSuchFieldException e) {
+                Log.e("Intercom-Cordova", "ERROR: Could not load APP_ID from gradle.properties!", e);
+              }
+            }
 
             Intercom.initialize(cordova.getActivity().getApplication(), apiKey, appId);
         } catch (Exception e) {
